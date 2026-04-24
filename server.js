@@ -21,7 +21,7 @@ const app = express();
 
 app.use(
   cors({
-    origin:"https://lms-frontend-puce-gamma.vercel.app/",
+    origin:"https://lms-frontend-puce-gamma.vercel.app",
     credentials:true
   }));
 app.use(express.json());

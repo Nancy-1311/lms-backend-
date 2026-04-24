@@ -7,8 +7,8 @@
     try {
       //  ONLY APPROVED + ACTIVE TUTORS
       const tutors = await Tutor.find({
-        isApproved: true,   // 🔥 IMPORTANT FIX
-        isActive: true,     // already in your model
+        isApproved: true,   
+        isActive: true,     
       }).populate("userId");
 
       // KEEP YOUR EXISTING FILTER 

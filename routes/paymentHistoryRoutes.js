@@ -8,7 +8,7 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🔐 PROTECTED
+// PROTECTED
 router.post("/", protect, savePayment);
 router.get("/", protect, getPayments);
 

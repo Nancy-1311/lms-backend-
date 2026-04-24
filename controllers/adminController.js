@@ -288,7 +288,6 @@ export const getAdminReviews = async (req, res) => {
   }
 };
 
-// ✅ DELETE REVIEW
 export const deleteReviewAdmin = async (req, res) => {
   try {
     const review = await Review.findById(req.params.id);

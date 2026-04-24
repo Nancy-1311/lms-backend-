@@ -79,7 +79,7 @@ export const updateMe = async (req, res) => {
     const updatedFields = {};
 
     if (name) updatedFields.name = name;
-    if (profilePic) updatedFields.profilePic = profilePic; // ✅ NEW
+    if (profilePic) updatedFields.profilePic = profilePic; 
 
     const user = await User.findByIdAndUpdate(
       req.user.id,

@@ -16,7 +16,6 @@ export const createCheckoutSession = async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       mode: "payment",
-
       line_items: [
         {
           price_data: {
@@ -29,22 +28,26 @@ export const createCheckoutSession = async (req, res) => {
           quantity: 1,
         },
       ],
-
-      success_url: `https://learning-management-system-frontend-gules.vercel.app/success?bookingId=${bookingId}&price=${price}&tutorId=${tutorId}`,
-      cancel_url: "https://learning-management-system-frontend-gules.vercel.app/cancel",
+     success_url: `https://lms-frontend-puce-gamma.vercel.app/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: "http://localhost:5173/cancel",
     });
 
     res.json({ url: session.url });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-//  SAVE PAYMENT + UPDATE BOOKING
+// SAVE PAYMENT + UPDATE BOOKING
 export const confirmPayment = async (req, res) => {
   try {
-    const { bookingId, price } = req.body;
+    const { bookingId, session_id } = req.body;
+
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+
+    if (!session) {
+      return res.status(400).json({ message: "Invalid session" });
+    }
 
     const booking = await Booking.findById(bookingId);
 
@@ -56,63 +59,159 @@ export const confirmPayment = async (req, res) => {
       return res.json({ message: "Already paid" });
     }
 
-    booking.isPaid = true;
-    booking.paymentStatus = "completed";
-    await booking.save();
-
-// SAVE PAYMENT
-    await Payment.create({
+    const payment = await Payment.create({
       userId: req.user.id,
-      tutorId: booking.tutorId,
+      tutorId: booking.tutor,
       bookingId,
-      tutorName: booking.tutorName,
-      amount: price,
+
+      amount: session.amount_total / 100,
+
+      transactionId: session.payment_intent,
+      stripeSessionId: session.id,
+
+      paymentMethod: session.payment_method_types[0],
+      status: session.payment_status === "paid" ? "paid" : "pending",
+
+      paidAt: new Date(session.created * 1000),
     });
+
+  
+    booking.isPaid = true;
+    booking.paymentStatus = "paid";
+    booking.paymentId = payment._id; 
+
+    await booking.save();
 
     res.json({ message: "Payment confirmed" });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// GET TUTOR EARNINGS
 export const getTutorEarnings = async (req, res) => {
   try {
     const tutor = await Tutor.findOne({ userId: req.user.id });
 
     if (!tutor) {
-      return res.status(404).json({ message: "Tutor not found" });
+      return res.status(404).json({
+        message: "Tutor not found",
+      });
     }
 
-    const payments = await Payment.find({ tutorId: tutor._id })
-      .populate("userId", "name email"); 
+    // ONLY PAID BOOKINGS + POPULATE STUDENT + TUTOR
+    const bookings = await Booking.find({
+      tutor: tutor._id,
+      isPaid: true,
+    })
+      .populate("student", "name email")
+      .populate({
+        path: "tutor",
+        populate: {
+          path: "userId",
+          select: "name",
+        },
+      })
+      .lean();
 
-    const totalEarnings = payments.reduce(
-      (acc, p) => acc + p.amount,
+    // FORMAT DATA 
+    const payments = bookings.map((b) => ({
+      _id: b._id,
+      amount: b.price,
+
+      student: b.student,
+
+      //ADD TUTOR NAME
+      tutor: {
+        name: b.tutor?.userId?.name,
+      },
+
+      subject: b.subject,
+      time: b.time,
+      createdAt: b.date,
+
+      status: "paid",
+    }));
+
+    const totalEarnings = bookings.reduce(
+      (sum, b) => sum + (b.price || 0),
       0
     );
 
     res.json({
       totalEarnings,
-      totalLessons: payments.length,
+      totalLessons: bookings.length,
       payments,
     });
 
   } catch (err) {
+    console.error("Earnings Error:", err);
     res.status(500).json({ message: err.message });
   }
-};
+};  
 
+// GET MY PAYMENTS
 export const getMyPayments = async (req, res) => {
   try {
     const payments = await Payment.find({
       userId: req.user.id,
-    });
+    })
+      .populate({
+        path: "bookingId",
+        select: "subject date time tutorName",
+      })
+      .populate("userId") 
+      .populate({
+        path: "tutorId",
+        populate: {
+          path: "userId",
+        },
+      });
 
-    res.json(payments);
+    const formatted = payments.map((p) => ({
+      _id: p._id,
 
+      //  WHO PAID
+      paidBy:
+        p.userId?.name ||
+        p.userId?.username ||
+        p.userId?.email ||
+        "Unknown User",
+
+      // TUTOR NAME
+      tutorName:
+        p.tutorId?.userId?.name ||
+        p.tutorId?.userId?.username ||
+        p.bookingId?.tutorName ||
+        p.tutorName ||
+        "Tutor",
+
+      // SUBJECT
+      subject:
+        p.bookingId?.subject ||
+        "No Subject",
+
+      price: p.amount,
+
+      date:
+        p.bookingId?.date ||
+        p.date,
+
+      time:
+        p.bookingId?.time ||
+        "No Time",
+
+      isPaid: true,
+
+      transactionId: p.transactionId || "N/A",
+      paymentMethod: p.paymentMethod || "Card",
+      status: p.status || "Success",
+    }));
+
+    res.json(formatted);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 };

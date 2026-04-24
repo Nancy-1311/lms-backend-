@@ -23,11 +23,22 @@ const tutorSchema = new mongoose.Schema({
 
   availability: [String],
 
-  // 🔥 ADD THIS
   isActive: {
     type: Boolean,
     default: true,
   },
-});
+
+  isApproved: {
+    type: Boolean,
+    default: false, 
+  },
+
+  approvalStatus: {
+    type: String,
+    enum: ["pending", "approved", "rejected"],
+    default: "pending",
+  },
+
+}, { timestamps: true });
 
 export default mongoose.model("Tutor", tutorSchema);

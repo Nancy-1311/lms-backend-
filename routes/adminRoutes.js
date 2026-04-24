@@ -4,18 +4,48 @@ import {
   deleteUser,
   toggleUserStatus,
   changeUserRole,
+  getAdminDashboard,
+  getAdminAnalytics,
+  getAdminBookings,
+  approveTutor,
+  rejectTutor,
+  getTopTutors,
+  getAdminReviews,
+  deleteReviewAdmin,
 } from "../controllers/adminController.js";
+
+import {
+  adminCancelBooking,
+  adminMarkCompleted,
+} from "../controllers/bookingController.js";
 
 import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// 🔒 Protected routes
-router.get("/users", protect, authorize("admin"), getUsers);
-router.delete("/users/:id", protect, authorize("admin"), deleteUser);
+// APPLY MIDDLEWARE ONCE 
+router.use(protect, authorize("admin"));
 
-// 🔥 NEW ROUTES
-router.put("/users/:id/toggle", protect, authorize("admin"), toggleUserStatus);
-router.put("/users/:id/role", protect, authorize("admin"), changeUserRole);
+// ================= USERS =================
+router.get("/users", getUsers);
+router.delete("/users/:id", deleteUser);
+router.put("/users/:id/toggle", toggleUserStatus);
+router.put("/users/:id/role", changeUserRole);
+router.get("/top-tutors", getTopTutors);
+router.get("/reviews", getAdminReviews);
+router.delete("/reviews/:id", deleteReviewAdmin);
+// ================= DASHBOARD =================
+router.get("/dashboard", getAdminDashboard);
+router.get("/analytics", getAdminAnalytics);
+
+// ================= BOOKINGS =================
+router.get("/bookings", getAdminBookings);
+
+// NEW ADMIN BOOKING ACTIONS
+router.delete("/bookings/:id", adminCancelBooking);
+router.put("/bookings/:id/complete", adminMarkCompleted);
+
+router.put("/tutors/:id/approve", approveTutor);
+router.put("/tutors/:id/reject", rejectTutor);
 
 export default router;

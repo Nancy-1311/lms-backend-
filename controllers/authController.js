@@ -63,7 +63,6 @@ export const login = async (req, res) => {
   }
 };
 
-// ✅ GET PROFILE
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
@@ -73,16 +72,53 @@ export const getMe = async (req, res) => {
   }
 };
 
-// ✅ UPDATE PROFILE
 export const updateMe = async (req, res) => {
   try {
+    const { name, profilePic } = req.body;
+
+    const updatedFields = {};
+
+    if (name) updatedFields.name = name;
+    if (profilePic) updatedFields.profilePic = profilePic; // ✅ NEW
+
     const user = await User.findByIdAndUpdate(
       req.user.id,
-      req.body,
+      updatedFields,
       { new: true }
     ).select("-password");
 
     res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+//CHANGE PASSWORD
+export const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    // Check current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    // Prevent same password
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: "New password must be different" });
+    }
+
+    //Hash new password
+    const hashed = await bcrypt.hash(newPassword, 10);
+
+    user.password = hashed;
+    await user.save();
+
+    res.json({ message: "Password updated successfully ✅" });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

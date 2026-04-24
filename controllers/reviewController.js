@@ -2,7 +2,6 @@ import Review from "../models/Review.js";
 import Tutor from "../models/Tutor.js";
 import Booking from "../models/Booking.js";
 
-// CREATE REVIEW (WITH VALIDATION)
 export const createReview = async (req, res) => {
   try {
     const { tutorId, rating, comment } = req.body;
@@ -21,10 +20,10 @@ export const createReview = async (req, res) => {
       });
     }
 
-    //  CHECK USER HAS BOOKED THIS TUTOR
+    //booking uses tutorId + userId
     const booking = await Booking.findOne({
-      tutorId,
-      userId: req.user.id,
+      tutor: tutorId,
+      student: req.user.id,   
     });
 
     if (!booking) {
@@ -33,9 +32,9 @@ export const createReview = async (req, res) => {
       });
     }
 
-// PREVENT MULTIPLE REVIEWS
+    // use tutorId + userId
     const existingReview = await Review.findOne({
-      tutorId,
+      tutorId: tutorId,
       userId: req.user.id,
     });
 
@@ -45,20 +44,17 @@ export const createReview = async (req, res) => {
       });
     }
 
-    
     const review = await Review.create({
-      tutorId,
+      tutorId: tutorId,
       userId: req.user.id,
       rating: numericRating,
       comment,
     });
 
-  
     booking.reviewed = true;
     await booking.save();
 
-    // UPDATE AVERAGE RATING
-    const reviews = await Review.find({ tutorId });
+    const reviews = await Review.find({ tutorId: tutorId });
 
     const avgRating =
       reviews.reduce((acc, r) => acc + r.rating, 0) /
@@ -71,15 +67,15 @@ export const createReview = async (req, res) => {
     res.json(review);
 
   } catch (err) {
+    console.error("CREATE REVIEW ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
 // GET REVIEWS BY TUTOR
 export const getReviewsByTutor = async (req, res) => {
   try {
     const reviews = await Review.find({
-      tutorId: req.params.tutorId,
+      tutor: req.params.tutorId,
     });
 
     res.json(reviews);
@@ -93,7 +89,7 @@ export const getReviewsByTutor = async (req, res) => {
 export const getMyReviews = async (req, res) => {
   try {
     const reviews = await Review.find({
-      userId: req.user.id,
+      userId: req.user.id, 
     });
 
     res.json(reviews);
@@ -102,3 +98,6 @@ export const getMyReviews = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+
+

@@ -12,6 +12,7 @@ import {
   getTopTutors,
   getAdminReviews,
   deleteReviewAdmin,
+  createUserByAdmin,
 } from "../controllers/adminController.js";
 
 import {
@@ -34,6 +35,7 @@ router.put("/users/:id/role", changeUserRole);
 router.get("/top-tutors", getTopTutors);
 router.get("/reviews", getAdminReviews);
 router.delete("/reviews/:id", deleteReviewAdmin);
+router.post("/users", protect, createUserByAdmin);
 // ================= DASHBOARD =================
 router.get("/dashboard", getAdminDashboard);
 router.get("/analytics", getAdminAnalytics);

@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import Tutor from "../models/Tutor.js"; 
 import Booking from "../models/Booking.js";
 import Review from "../models/Review.js";
+import bcrypt from "bcryptjs";
 
 // GET ALL USERS
 export const getUsers = async (req, res) => {

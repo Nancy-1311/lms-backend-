@@ -305,18 +305,48 @@ export const deleteReviewAdmin = async (req, res) => {
   }
 };
 
+
 export const createUserByAdmin = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    let { name, email, password, role } = req.body;
 
+    // ✅ TRIM
+    name = name?.trim();
+    email = email?.trim().toLowerCase();
+    password = password?.trim();
+
+    // ✅ REQUIRED CHECK
     if (!name || !email || !password || !role) {
       return res.status(400).json({
         message: "All fields are required",
       });
     }
 
-    const exists = await User.findOne({ email });
+    // ✅ EMAIL FORMAT
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        message: "Invalid email format",
+      });
+    }
 
+    // ✅ PASSWORD LENGTH
+    if (password.length < 6) {
+      return res.status(400).json({
+        message: "Password must be at least 6 characters",
+      });
+    }
+
+    // ✅ ROLE CHECK
+    const validRoles = ["student", "tutor", "admin"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({
+        message: "Invalid role selected",
+      });
+    }
+
+    // ✅ DUPLICATE USER
+    const exists = await User.findOne({ email });
     if (exists) {
       return res.status(400).json({
         message: "User already exists",

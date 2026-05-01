@@ -413,12 +413,39 @@ export const adminMarkCompleted = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
+    const now = new Date();
+    const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
+
+    // ❌ Cannot complete future booking
+    if (bookingDateTime > now) {
+      return res.status(400).json({
+        message: "❌ Cannot complete future booking",
+      });
+    }
+
+    // ❌ Cannot complete cancelled booking
+    if (booking.isCancelled) {
+      return res.status(400).json({
+        message: "❌ Cannot complete cancelled booking",
+      });
+    }
+
+    // ❌ Already completed
+    if (booking.isCompleted) {
+      return res.status(400).json({
+        message: "Booking already completed",
+      });
+    }
+
+    // ✅ Mark as completed
     booking.isCompleted = true;
+
     await booking.save();
 
     res.json({ message: "Booking marked as completed" });
 
   } catch (err) {
+    console.error("ADMIN COMPLETE ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };

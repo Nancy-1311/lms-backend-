@@ -26,6 +26,12 @@ const bookingSchema = new mongoose.Schema(
       trim: true,
     },
 
+    isCancelled: {
+  type: Boolean,
+  default: false,
+},
+cancelledAt: Date,
+    
     // DATE + TIME
     date: {
       type: Date,

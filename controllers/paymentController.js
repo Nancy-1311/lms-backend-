@@ -30,7 +30,7 @@ export const createCheckoutSession = async (req, res) => {
       ],
      success_url: `https://lms-frontend-puce-gamma.vercel.app/success?bookingId=${bookingId}&session_id={CHECKOUT_SESSION_ID}`,
       // cancel_url: "https://lms-frontend-puce-gamma.vercel.app/cancel",
-       cancel_url: "http://localhost:5173/cancel",
+     cancel_url: `https://lms-frontend-puce-gamma.vercel.app/tutors/${tutorId}`
     });
 
     res.json({ url: session.url });

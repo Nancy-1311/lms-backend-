@@ -377,7 +377,21 @@ export const adminCancelBooking = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    await booking.deleteOne();
+    // 🔴 BLOCK past booking cancel (recommended)
+    const now = new Date();
+    const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
+
+    if (bookingDateTime < now) {
+      return res.status(400).json({
+        message: "❌ Cannot cancel past booking",
+      });
+    }
+
+    // ✅ SOFT DELETE
+    booking.isCancelled = true;
+    booking.cancelledAt = new Date();
+
+    await booking.save();
 
     res.json({ message: "Booking cancelled by admin" });
 

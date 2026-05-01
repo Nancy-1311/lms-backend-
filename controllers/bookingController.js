@@ -261,12 +261,26 @@ export const deleteBooking = async (req, res) => {
       return res.status(403).json({ message: "Not allowed" });
     }
 
-    await booking.deleteOne();
+    // 🔴 BLOCK PAST BOOKINGS
+    const now = new Date();
+    const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
 
-    res.json({ message: "Booking cancelled" });
+    if (bookingDateTime < now) {
+      return res.status(400).json({
+        message: "❌ Cannot cancel past booking",
+      });
+    }
+
+    // ✅ SOFT DELETE
+    booking.isCancelled = true;
+    booking.cancelledAt = new Date();
+
+    await booking.save();
+
+    res.json({ message: "Booking cancelled successfully" });
 
   } catch (err) {
-    console.error("DELETE ERROR:", err); 
+    console.error("CANCEL ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };

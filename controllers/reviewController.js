@@ -4,7 +4,7 @@ import Booking from "../models/Booking.js";
 
 export const createReview = async (req, res) => {
   try {
-    const { tutorId, rating, comment } = req.body;
+    const { tutorId, bookingId, rating, comment } = req.body;
 
     if (!tutorId || rating === undefined) {
       return res.status(400).json({
@@ -22,6 +22,7 @@ export const createReview = async (req, res) => {
 
     //booking uses tutorId + userId
     const booking = await Booking.findOne({
+      _id: bookingId,
       tutor: tutorId,
       student: req.user.id,   
     });
@@ -34,8 +35,7 @@ export const createReview = async (req, res) => {
 
     // use tutorId + userId
     const existingReview = await Review.findOne({
-      tutorId: tutorId,
-      userId: req.user.id,
+      bookingId: bookingId,
     });
 
     if (existingReview) {
@@ -45,6 +45,7 @@ export const createReview = async (req, res) => {
     }
 
     const review = await Review.create({
+      bookingId: bookingId,
       tutorId: tutorId,
       userId: req.user.id,
       rating: numericRating,

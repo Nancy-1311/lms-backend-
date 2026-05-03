@@ -76,7 +76,7 @@ export const createReview = async (req, res) => {
 export const getReviewsByTutor = async (req, res) => {
   try {
     const reviews = await Review.find({
-      tutorId: req.params.tutorId,
+     tutorId: new mongoose.Types.ObjectId(req.params.tutorId),
     }).populate("userId", "name");
 
     res.json(reviews);

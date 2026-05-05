@@ -15,15 +15,18 @@ import adminRoutes from "./routes/adminRoutes.js";
 import connectDB from "./config/db.js";
 import User from "./models/User.js"; 
 
-connectDB();
-
 const app = express();
 
 app.use(
   cors({
-    origin:"https://lms-frontend-puce-gamma.vercel.app",
-    credentials:true
-  }));
+    origin: [
+      "https://lms-frontend-puce-gamma.vercel.app",
+      "http://localhost:3000"
+    ],
+    credentials: true
+  })
+);
+
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
@@ -36,7 +39,7 @@ app.use("/api/admin", adminRoutes);
 
 const createAdmin = async () => {
   try {
-    const exists = await User.findOne({ email: "nan@gmail.com" });
+    const exists = await User.findOne({ email: "admin@test.com" });
 
     if (!exists) {
       const hashedPassword = await bcrypt.hash("123456", 10);
@@ -57,7 +60,9 @@ const createAdmin = async () => {
   }
 };
 
-createAdmin(); 
+connectDB().then(() => {
+  createAdmin();
+});
 
 app.get("/", (req, res) => {
   res.send("API is running...");

@@ -9,16 +9,15 @@ const reviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true
+    required: true,
+  },
+  bookingId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Booking",
+    required: true,
   },
   rating: Number,
   comment: String,
 });
-
-bookingId: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Booking",
-  required: true,
-},
 
 export default mongoose.model("Review", reviewSchema);
